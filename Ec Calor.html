@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller de Calorimetría | 8vo Básico</title>
+    <!-- Fuentes con carácter editorial y monoespaciado para números -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-paper: #f4f4f0; /* Color papel reciclado */
+            --ink: #111111;      /* Tinta negra */
+            --accent: #ff3366;   /* Rojo marcador */
+            --blueprint: #0055ff;/* Azul plano */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-paper);
+            /* Fondo de cuadrícula de cuaderno */
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--ink);
+            padding-top: 90px;
+        }
+
+        /* --- TEMPORIZADOR ESTILO LABORATORIO --- */
+        #timer-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--ink);
+            color: #00ff00; /* Verde fósforo de pantalla antigua */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+            border-bottom: 4px solid var(--accent);
+            z-index: 1000;
+        }
+
+        .timer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .timer-inputs {
+            font-family: 'IBM Plex Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .timer-inputs input {
+            width: 50px;
+            padding: 4px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.1rem;
+            background: transparent;
+            border: 1px solid #555;
+            color: white;
+            text-align: center;
+        }
+
+        .timer-inputs input:focus {
+            outline: none;
+            border-color: #00ff00;
+        }
+
+        #time-display {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 3rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+
+        #time-display.danger {
+            color: var(--accent);
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* --- BOTONES --- */
+        .btn {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 16px;
+            border: 2px solid var(--ink);
+            background-color: var(--bg-paper);
+            color: var(--ink);
+            cursor: pointer;
+            box-shadow: 3px 3px 0px var(--ink); /* Sombra dura */
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: 0px 0px 0px var(--ink);
+        }
+
+        .btn-timer {
+            border-color: white;
+            color: white;
+            background-color: transparent;
+            box-shadow: 3px 3px 0px white;
+        }
+        
+        .btn-timer:active { box-shadow: 0px 0px 0px white; }
+
+        /* --- MENÚ PRINCIPAL --- */
+        #main-menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .menu-block {
+            background-color: white;
+            border: 3px solid var(--ink);
+            padding: 30px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 6px 6px 0px var(--ink);
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .menu-block:hover {
+            background-color: var(--ink);
+            color: white;
+        }
+
+        .menu-block:hover .block-number {
+            color: var(--accent);
+        }
+
+        .block-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 3rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .menu-block h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        /* --- SECCIONES DE PROBLEMAS --- */
+        .section-container {
+            display: none;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-container.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--ink);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .problem-card {
+            background-color: white;
+            border: 2px solid var(--ink);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .problem-number {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 600;
+            background-color: var(--ink);
+            color: white;
+            padding: 2px 10px;
+            flex-shrink: 0;
+        }
+
+        .problem-text {
+            font-size: 1.2rem;
+            line-height: 1.5;
+        }
+
+        .math {
+            font-family: 'IBM Plex Mono', monospace;
+            background-color: #eee;
+            padding: 2px 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        /* --- SOLUCIONES --- */
+        .btn-show-sol {
+            width: 100%;
+            margin-top: 30px;
+            padding: 15px;
+            background-color: var(--blueprint);
+            color: white;
+            border: 3px solid var(--ink);
+            box-shadow: 5px 5px 0px var(--ink);
+        }
+
+        .btn-show-sol:active {
+            transform: translate(5px, 5px);
+            box-shadow: 0px 0px 0px var(--ink);
+        }
+
+        .solutions-panel {
+            display: none;
+            background-color: #fff;
+            border: 3px solid var(--blueprint);
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 6px 6px 0px var(--blueprint);
+        }
+
+        .solutions-panel.active {
+            display: block;
+        }
+
+        .solutions-panel h4 {
+            font-size: 1.2rem;
+            color: var(--blueprint);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--blueprint);
+            display: inline-block;
+        }
+
+        .solutions-list {
+            list-style: none;
+        }
+
+        .solutions-list li {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.1rem;
+            padding: 10px 0;
+            border-bottom: 1px dashed #ccc;
+        }
+
+        .solutions-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRA SUPERIOR: TEMPORIZADOR -->
+    <div id="timer-container">
+        <div class="timer-left">
+            <div class="timer-inputs">
+                <input type="number" id="input-min" value="5" min="0" max="99"> :
+                <input type="number" id="input-sec" value="0" min="0" max="59">
+            </div>
+            <div id="time-display">05:00</div>
+        </div>
+        <div class="timer-controls">
+            <button class="btn btn-timer" onclick="startTimer()">Iniciar</button>
+            <button class="btn btn-timer" onclick="pauseTimer()">Pausar</button>
+            <button class="btn btn-timer" onclick="resetTimer()">Reset</button>
+        </div>
+    </div>
+
+    <!-- MENÚ PRINCIPAL -->
+    <div id="main-menu">
+        <div class="menu-block" onclick="showSection('sec1')">
+            <span class="block-number">01</span>
+            <h3>Calor (Q)</h3>
+            <p>Calcular la energía transferida</p>
+        </div>
+        <div class="menu-block" onclick="showSection('sec2')">
+            <span class="block-number">02</span>
+            <h3>Masa (m)</h3>
+            <p>Despejar la cantidad de materia</p>
+        </div>
+        <div class="menu-block" onclick="showSection('sec3')">
+            <span class="block-number">03</span>
+            <h3>Calor Específico</h3>
+            <p>Identificar el material (c)</p>
+        </div>
+        <div class="menu-block" onclick="showSection('sec4')">
+            <span class="block-number">04</span>
+            <h3>Temperatura</h3>
+            <p>Variación térmica (ΔT)</p>
+        </div>
+        <div class="menu-block" onclick="showSection('sec5')">
+            <span class="block-number">05</span>
+            <h3>Equilibrio Térmico</h3>
+            <p>Mezclas y transferencia</p>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 1 -->
+    <div id="sec1" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">01. Calculando Q</h2>
+            <button class="btn" onclick="goHome()">← Volver</button>
+        </div>
+        
+        <div class="problem-card">
+            <div class="problem-number">1</div>
+            <div class="problem-text">¿Qué cantidad de calor se necesita para calentar 100 g de agua desde 20 °C hasta 80 °C? (<span class="math">c_agua = 1 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">2</div>
+            <div class="problem-text">Una barra de hierro de 250 g se enfría desde 150 °C hasta 25 °C. ¿Cuánto calor cedió? (<span class="math">c_hierro = 0,11 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">3</div>
+            <div class="problem-text">Calcula el calor absorbido por 50 g de cobre que pasan de 15 °C a 60 °C. (<span class="math">c_cobre = 0,09 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">4</div>
+            <div class="problem-text">Una sartén de aluminio de 400 g se calienta desde 25 °C hasta 120 °C. ¿Cuánto calor absorbió? (<span class="math">c_aluminio = 0,21 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">5</div>
+            <div class="problem-text">Un bloque de vidrio de 1.000 g baja su temperatura de 35 °C a 10 °C. ¿Qué cantidad de calor liberó? (<span class="math">c_vidrio = 0,2 cal/g°C</span>)</div>
+        </div>
+        
+        <button class="btn btn-show-sol" onclick="toggleSolutions('sol1')">Desplegar Resultados</button>
+        <div id="sol1" class="solutions-panel">
+            <h4>Solucionario:</h4>
+            <ul class="solutions-list">
+                <li>1. Q = 100 · 1 · 60 = 6.000 cal</li>
+                <li>2. Q = 250 · 0,11 · (-125) = -3.437,5 cal</li>
+                <li>3. Q = 50 · 0,09 · 45 = 202,5 cal</li>
+                <li>4. Q = 400 · 0,21 · 95 = 7.980 cal</li>
+                <li>5. Q = 1000 · 0,2 · (-25) = -5.000 cal</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 2 -->
+    <div id="sec2" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">02. Calculando Masa</h2>
+            <button class="btn" onclick="goHome()">← Volver</button>
+        </div>
+        
+        <div class="problem-card">
+            <div class="problem-number">6</div>
+            <div class="problem-text">¿Qué masa de agua absorbe 5.000 cal al calentarse desde 15 °C hasta 65 °C? (<span class="math">c_agua = 1 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">7</div>
+            <div class="problem-text">Una pieza de plata cede 300 cal al enfriarse desde 100 °C hasta 20 °C. ¿Cuál es su masa? (<span class="math">c_plata = 0,056 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">8</div>
+            <div class="problem-text">¿Cuál es la masa de un lingote de plomo que absorbe 1.200 cal cuando sube de 20 °C a 220 °C? (<span class="math">c_plomo = 0,03 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">9</div>
+            <div class="problem-text">Un trozo de zinc absorbe 2.000 cal y pasa de 30 °C a 80 °C. Calcula su masa. (<span class="math">c_zinc = 0,093 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">10</div>
+            <div class="problem-text">Un metal absorbió 450 cal al calentarse de 5 °C a 35 °C. Si <span class="math">c = 0,15 cal/g°C</span>, ¿cuál es su masa?</div>
+        </div>
+        
+        <button class="btn btn-show-sol" onclick="toggleSolutions('sol2')">Desplegar Resultados</button>
+        <div id="sol2" class="solutions-panel">
+            <h4>Solucionario:</h4>
+            <ul class="solutions-list">
+                <li>6. m = 5000 / (1 · 50) = 100 g</li>
+                <li>7. m = -300 / (0,056 · -80) = 66,96 g</li>
+                <li>8. m = 1200 / (0,03 · 200) = 200 g</li>
+                <li>9. m = 2000 / (0,093 · 50) = 430,1 g</li>
+                <li>10. m = 450 / (0,15 · 30) = 100 g</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 3 -->
+    <div id="sec3" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">03. Calor Específico</h2>
+            <button class="btn" onclick="goHome()">← Volver</button>
+        </div>
+        
+        <div class="problem-card">
+            <div class="problem-number">11</div>
+            <div class="problem-text">Al suministrar 1.000 cal a 200 g de un metal, su temperatura sube de 20 °C a 70 °C. ¿Cuál es su calor específico?</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">12</div>
+            <div class="problem-text">Una masa de 50 g de mercurio absorbe 132 cal al pasar de 10 °C a 90 °C. Calcula su calor específico.</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">13</div>
+            <div class="problem-text">¿Cuál es el calor específico de 300 g de aluminio que absorbe 1.260 cal para subir de 15 °C a 35 °C?</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">14</div>
+            <div class="problem-text">150 g de acero absorben 900 cal y su temperatura cambia de 25 °C a 75 °C. Determina el calor específico.</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">15</div>
+            <div class="problem-text">Una masa de 80 g de hierro absorbe 440 cal, elevando su temperatura de 40 °C a 90 °C. ¿Cuál es su calor específico?</div>
+        </div>
+        
+        <button class="btn btn-show-sol" onclick="toggleSolutions('sol3')">Desplegar Resultados</button>
+        <div id="sol3" class="solutions-panel">
+            <h4>Solucionario:</h4>
+            <ul class="solutions-list">
+                <li>11. c = 1000 / (200 · 50) = 0,1 cal/g°C</li>
+                <li>12. c = 132 / (50 · 80) = 0,033 cal/g°C</li>
+                <li>13. c = 1260 / (300 · 20) = 0,21 cal/g°C</li>
+                <li>14. c = 900 / (150 · 50) = 0,12 cal/g°C</li>
+                <li>15. c = 440 / (80 · 50) = 0,11 cal/g°C</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 4 -->
+    <div id="sec4" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">04. Variación de Temp.</h2>
+            <button class="btn" onclick="goHome()">← Volver</button>
+        </div>
+        
+        <div class="problem-card">
+            <div class="problem-number">16</div>
+            <div class="problem-text">Si 100 g de agua absorben 2.000 cal, ¿cuál es su variación de temperatura (ΔT)?</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">17</div>
+            <div class="problem-text">Una pieza de cobre de 50 g cede 450 cal. ¿Cuál fue su variación de temperatura? (<span class="math">c_cobre = 0,09 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">18</div>
+            <div class="problem-text">50 g de agua a 20 °C absorben 1.500 cal. ¿Cuál será su temperatura final?</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">19</div>
+            <div class="problem-text">Un bloque de plomo de 100 g a 15 °C absorbe 600 cal. ¿Cuál será su temperatura final? (<span class="math">c_plomo = 0,03 cal/g°C</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">20</div>
+            <div class="problem-text">200 g de agua absorben 3.000 cal. Si su temperatura final es de 25 °C, ¿cuál era su temperatura inicial?</div>
+        </div>
+        
+        <button class="btn btn-show-sol" onclick="toggleSolutions('sol4')">Desplegar Resultados</button>
+        <div id="sol4" class="solutions-panel">
+            <h4>Solucionario:</h4>
+            <ul class="solutions-list">
+                <li>16. ΔT = 2000 / 100 = 20 °C</li>
+                <li>17. ΔT = -450 / (50 · 0,09) = -100 °C (Bajó 100°C)</li>
+                <li>18. ΔT = 1500 / 50 = 30 °C. Tf = 20 + 30 = 50 °C</li>
+                <li>19. ΔT = 600 / 3 = 200 °C. Tf = 15 + 200 = 215 °C</li>
+                <li>20. ΔT = 3000 / 200 = 15 °C. Ti = 25 - 15 = 10 °C</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 5 -->
+    <div id="sec5" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">05. Equilibrio Térmico</h2>
+            <button class="btn" onclick="goHome()">← Volver</button>
+        </div>
+        
+        <div class="problem-card">
+            <div class="problem-number">21</div>
+            <div class="problem-text">Se mezclan 100 g de agua a 80 °C con 200 g de agua a 20 °C. ¿Cuál es la temperatura final de equilibrio?</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">22</div>
+            <div class="problem-text">Se introducen 100 g de hierro a 100 °C en 200 g de agua a 25 °C. Calcula la temperatura de equilibrio. (<span class="math">c_hierro = 0,11</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">23</div>
+            <div class="problem-text">Un bloque de 50 g de cobre a 150 °C se sumerge en 100 g de agua a 20 °C. ¿Temperatura de equilibrio? (<span class="math">c_cobre = 0,09</span>)</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">24</div>
+            <div class="problem-text">150 g de metal a 90 °C en 250 g de agua a 20 °C alcanzan equilibrio a 25 °C. ¿Calor específico del metal?</div>
+        </div>
+        <div class="problem-card">
+            <div class="problem-number">25</div>
+            <div class="problem-text">100 g de agua a T_i se mezclan con 100 g a 50 °C. Si el equilibrio es 35 °C, ¿cuál era la T_i?</div>
+        </div>
+        
+        <button class="btn btn-show-sol" onclick="toggleSolutions('sol5')">Desplegar Resultados</button>
+        <div id="sol5" class="solutions-panel">
+            <h4>Solucionario:</h4>
+            <ul class="solutions-list">
+                <li>21. Te = 40 °C</li>
+                <li>22. Te ≈ 29,6 °C</li>
+                <li>23. Te ≈ 25,3 °C</li>
+                <li>24. c ≈ 0,128 cal/g°C</li>
+                <li>25. T_i = 20 °C</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- LÓGICA DEL TEMPORIZADOR ---
+        let timerInterval;
+        let timeInSeconds = 300;
+        let isRunning = false;
+
+        const display = document.getElementById('time-display');
+        const inputMin = document.getElementById('input-min');
+        const inputSec = document.getElementById('input-sec');
+
+        function updateDisplay() {
+            const m = Math.floor(timeInSeconds / 60);
+            const s = timeInSeconds % 60;
+            display.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            
+            if (timeInSeconds <= 10) {
+                display.classList.add('danger');
+            } else {
+                display.classList.remove('danger');
+            }
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            if (timeInSeconds <= 0) setTimerFromInputs();
+
+            isRunning = true;
+            timerInterval = setInterval(() => {
+                if (timeInSeconds > 0) {
+                    timeInSeconds--;
+                    updateDisplay();
+                } else {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    // Alerta nativa del navegador
+                    alert("¡Tiempo de laboratorio finalizado!");
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            setTimerFromInputs();
+        }
+
+        function setTimerFromInputs() {
+            const m = parseInt(inputMin.value) || 0;
+            const s = parseInt(inputSec.value) || 0;
+            timeInSeconds = (m * 60) + s;
+            updateDisplay();
+        }
+
+        inputMin.addEventListener('change', () => { if(!isRunning) setTimerFromInputs(); });
+        inputSec.addEventListener('change', () => { if(!isRunning) setTimerFromInputs(); });
+        updateDisplay();
+
+        // --- LÓGICA DE NAVEGACIÓN ---
+        function showSection(sectionId) {
+            document.getElementById('main-menu').style.display = 'none';
+            
+            const sections = document.querySelectorAll('.section-container');
+            sections.forEach(sec => sec.classList.remove('active'));
+
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Cerrar paneles de soluciones al cambiar de sección
+            document.querySelectorAll('.solutions-panel').forEach(sol => sol.classList.remove('active'));
+        }
+
+        function goHome() {
+            const sections = document.querySelectorAll('.section-container');
+            sections.forEach(sec => sec.classList.remove('active'));
+            document.getElementById('main-menu').style.display = 'grid';
+        }
+
+        // --- LÓGICA DE SOLUCIONES ---
+        function toggleSolutions(solId) {
+            const solContainer = document.getElementById(solId);
+            solContainer.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
